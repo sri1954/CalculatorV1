@@ -1,7 +1,5 @@
 ﻿using System.Xml;
 using System.Xml.Serialization;
-//using System.Collections.Generic;
-//using System.Diagnostics.CodeAnalysis;
 
 namespace CalculatorLibrary.Models
 {

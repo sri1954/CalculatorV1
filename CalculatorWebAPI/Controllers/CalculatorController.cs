@@ -1,13 +1,11 @@
 ﻿using CalculatorLibrary.Models;
 using CalculatorLibrary.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client;
 using Newtonsoft.Json;
-using System;
+using Newtonsoft.Json.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 
 namespace CalculatorWebAPI.Controllers
 {
@@ -33,7 +31,14 @@ namespace CalculatorWebAPI.Controllers
 
             try
             {
+                // Check if the JSON string is null or empty
                 if (string.IsNullOrEmpty(jsonString))
+                {
+                    return BadRequest("Invalid JSON string");
+                }
+
+                // Check if the JSON string is valid
+                if (DetectXMLJSONFormat(jsonString, "JSON") != "JSON")
                 {
                     return BadRequest("Invalid JSON string");
                 }
@@ -50,7 +55,7 @@ namespace CalculatorWebAPI.Controllers
             }
             catch (System.Xml.XmlException ex)
             {
-                return BadRequest($"Invalid XML: {ex.Message}");
+                return BadRequest($"Invalid JSON: {ex.Message}");
             }
         }
 
@@ -68,7 +73,14 @@ namespace CalculatorWebAPI.Controllers
 
             try
             {
+                // Check if the XML string is null or empty
                 if (string.IsNullOrEmpty(xmlString))
+                {
+                    return BadRequest("Invalid XML string");
+                }
+
+                // Check if the XML string is valid
+                if (DetectXMLJSONFormat(xmlString, "XML") != "XML")
                 {
                     return BadRequest("Invalid XML string");
                 }
@@ -102,6 +114,7 @@ namespace CalculatorWebAPI.Controllers
 
             try
             {
+                // Check if the XML string is null or empty
                 if (string.IsNullOrEmpty(strRequest))
                 {
                     return BadRequest("Invalid XML/JSON string");
@@ -110,9 +123,23 @@ namespace CalculatorWebAPI.Controllers
                 switch (strContentType)
                 {
                     case "application/json":
+                        // Check if the JSON string is valid
+                        if (DetectXMLJSONFormat(strRequest, "JSON") != "JSON")
+                        {
+                            return BadRequest("Invalid JSON string");
+                        }
+
+                        // Deserialize the JSON string into an XmlDocument object
                         xmlString = GetXmlStringFromJsonString(strRequest);
                         break;
+
                     case "application/xml":
+                        // Check if the XML string is valid
+                        if (DetectXMLJSONFormat(strRequest, "XML") != "XML")
+                        {
+                            return BadRequest("Invalid XML string");
+                        }
+
                         xmlString = strRequest;
                         break;
                 }
@@ -125,15 +152,15 @@ namespace CalculatorWebAPI.Controllers
             }
             catch (System.Xml.XmlException ex)
             {
-                return BadRequest($"Invalid XML: {ex.Message}");
+                return BadRequest($"Invalid XML/JSON: {ex.Message}");
             }
         }
 
         [HttpPost]
-        [Route("Compute")]
+        [Route("PostModel")]
         [Consumes("application/xml", "application/json")]
 
-        public ActionResult<CalculationRequest> Compute([FromBody] CalculationRequest myrequest)
+        public ActionResult<CalculationRequest> PostModel([FromBody] CalculationRequest myrequest)
         {
             double result = 0;
             try
@@ -155,6 +182,44 @@ namespace CalculatorWebAPI.Controllers
             {
                 return Ok(ex.Message);
             }
+        }
+
+
+        public static string DetectXMLJSONFormat(string input, string strType)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return "Unknown";
+
+            // Check if the input is JSON or XML based on the content type
+            if ((strType == "JSON"))
+            {
+                try
+                {
+                    var token = JToken.Parse(input);
+                    return "JSON";
+                }
+                catch (JsonReaderException)
+                {
+                    // Not JSON
+                    return "Unknown";
+                }
+            }
+
+            if (strType == "XML")
+            {
+                try
+                {
+                    var xml = XElement.Parse(input);
+                    return "XML";
+                }
+                catch (System.Xml.XmlException)
+                {
+                    // Not XML
+                    return "Unknown";
+                }
+            }
+
+            return "Unknown";
         }
 
         private static string GetXmlStringFromJsonString(string strRequest)
