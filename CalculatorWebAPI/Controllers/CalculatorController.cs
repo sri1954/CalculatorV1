@@ -60,6 +60,43 @@ namespace CalculatorWebAPI.Controllers
         }
 
         [HttpPost]
+        [Route("PostJsonWithPram")]
+        [Consumes("application/json")]
+        public IActionResult PostJsonWithPram(string jsonString)
+        {
+            string xmlString = string.Empty;
+
+            try
+            {
+                // Check if the JSON string is null or empty
+                if (string.IsNullOrEmpty(jsonString))
+                {
+                    return BadRequest("Invalid JSON string");
+                }
+
+                // Check if the JSON string is valid
+                if (DetectXMLJSONFormat(jsonString, "JSON") != "JSON")
+                {
+                    return BadRequest("Invalid JSON string");
+                }
+
+                // Deserialize the JSON string into an XmlDocument object
+                xmlString = GetXmlStringFromJsonString(jsonString);
+
+                // Get IActionResult
+                //XElement xml = GetActionResult(xmlDoc.OuterXml);
+                XElement xml = GetActionResult(xmlString);
+
+                // Return the modified XML as a response
+                return Ok(xml);
+            }
+            catch (System.Xml.XmlException ex)
+            {
+                return BadRequest($"Invalid JSON: {ex.Message}");
+            }
+        }
+
+        [HttpPost]
         [Route("PostXML")]
         [Consumes("application/xml")]
 
@@ -71,6 +108,38 @@ namespace CalculatorWebAPI.Controllers
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             xmlString = await reader.ReadToEndAsync();
 
+            try
+            {
+                // Check if the XML string is null or empty
+                if (string.IsNullOrEmpty(xmlString))
+                {
+                    return BadRequest("Invalid XML string");
+                }
+
+                // Check if the XML string is valid
+                if (DetectXMLJSONFormat(xmlString, "XML") != "XML")
+                {
+                    return BadRequest("Invalid XML string");
+                }
+
+                // Get IActionResult
+                XElement xml = GetActionResult(xmlString);
+
+                // Return the modified XML as a response
+                return Ok(xml);
+            }
+            catch (System.Xml.XmlException ex)
+            {
+                return BadRequest($"Invalid XML: {ex.Message}");
+            }
+        }
+
+        [HttpPost]
+        [Route("PostXMLWithParam")]
+        [Consumes("application/xml")]
+
+        public IActionResult PostXMLWithParam(string xmlString)
+        {
             try
             {
                 // Check if the XML string is null or empty
