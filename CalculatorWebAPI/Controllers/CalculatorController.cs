@@ -13,7 +13,6 @@ namespace CalculatorWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Consumes("application/xml", "application/json")]
     [Produces("application/xml")]
     [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
 
@@ -22,60 +21,29 @@ namespace CalculatorWebAPI.Controllers
 
         [HttpPost]
         [Route("PostJSON")]
+        [Consumes("application/json")]
 
         public async Task<IActionResult> PostJSON()
         {
+            string xmlString = string.Empty;
+
             // Read the XML string from the request body
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var jsonString = await reader.ReadToEndAsync();
 
             try
             {
-                XmlDocument? xmlDoc = JsonConvert.DeserializeXmlNode(jsonString);
-                if (xmlDoc == null)
+                if (string.IsNullOrEmpty(jsonString))
                 {
-                    throw new InvalidOperationException("Deserialization resulted in a null XmlDocument.");
+                    return BadRequest("Invalid JSON string");
                 }
 
-                // Convert XmlDocument to XElement
-                XElement xml = XElement.Parse(xmlDoc.OuterXml);
+                // Deserialize the JSON string into an XmlDocument object
+                xmlString = GetXmlStringFromJsonString(jsonString);
 
-                // Parse the XML string into an XElement object
-                //XElement xml = XElement.Parse(xmlString);
-
-                // lOOP through each operation in the XML
-                foreach (var element in xml!.Element("Operations")!.Elements())
-                {
-                    // GET the operation type and operands from the XML
-                    string operation = element.Attribute("ID")?.Value ?? string.Empty;
-                    string operand1 = element.Element("Operand1")?.Value ?? "0";
-                    string operand2 = element.Element("Operand2")?.Value ?? "0";
-
-                    try
-                    {
-                        // Validate the operation type
-                        if (string.IsNullOrEmpty(operation))
-                            throw new InvalidOperationException("Invalid operation type");
-
-                        // DECLARE the result variable
-                        double result = 0.0;
-
-                        // Create the operation object using the factory method
-                        OperationBase _operation = OperationFactory.CreateOperation(operation, Convert.ToDouble(operand1), Convert.ToDouble(operand2));
-
-                        // Execute the operation
-                        result = _operation.Execute();
-
-                        // Update the XML with the result
-                        element.Add(new XElement("Result", result));
-
-                    }
-                    catch (Exception ex)
-                    {
-                        // Update the XML with the result
-                        element.Add(new XElement("Result", ex.Message));
-                    }
-                }
+                // Get IActionResult
+                //XElement xml = GetActionResult(xmlDoc.OuterXml);
+                XElement xml = GetActionResult(xmlString);
 
                 // Return the modified XML as a response
                 return Ok(xml);
@@ -88,51 +56,25 @@ namespace CalculatorWebAPI.Controllers
 
         [HttpPost]
         [Route("PostXML")]
+        [Consumes("application/xml")]
 
         public async Task<IActionResult> PostXml()
         {
+            string xmlString = string.Empty;
+
             // Read the XML string from the request body
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
-            var xmlString = await reader.ReadToEndAsync();
+            xmlString = await reader.ReadToEndAsync();
 
             try
             {
-                // Parse the XML string into an XElement object
-                XElement xml = XElement.Parse(xmlString);
-
-                // lOOP through each operation in the XML
-                foreach (var element in xml!.Element("Operations")!.Elements())
+                if (string.IsNullOrEmpty(xmlString))
                 {
-                    // GET the operation type and operands from the XML
-                    string operation = element.Attribute("ID")?.Value ?? string.Empty;
-                    string operand1 = element.Element("Operand1")?.Value ?? "0";
-                    string operand2 = element.Element("Operand2")?.Value ?? "0";
-
-                    try
-                    {
-                        // Validate the operation type
-                        if (string.IsNullOrEmpty(operation))
-                            throw new InvalidOperationException("Invalid operation type");
-
-                        // DECLARE the result variable
-                        double result = 0.0;
-
-                        // Create the operation object using the factory method
-                        OperationBase _operation = OperationFactory.CreateOperation(operation, Convert.ToDouble(operand1), Convert.ToDouble(operand2));
-
-                        // Execute the operation
-                        result = _operation.Execute();
-
-                        // Update the XML with the result
-                        element.Add(new XElement("Result", result));
-
-                    }
-                    catch (Exception ex)
-                    {
-                        // Update the XML with the result
-                        element.Add(new XElement("Result", ex.Message));
-                    }
+                    return BadRequest("Invalid XML string");
                 }
+
+                // Get IActionResult
+                XElement xml = GetActionResult(xmlString);
 
                 // Return the modified XML as a response
                 return Ok(xml);
@@ -143,6 +85,49 @@ namespace CalculatorWebAPI.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("PostXMLOrJSON")]
+        [Consumes("application/xml", "application/json")]
+
+        public async Task<IActionResult> PostXmlOrJson()
+        {
+            string xmlString = string.Empty;
+
+            // Get ContentType
+            var strContentType = Request.ContentType;
+
+            // Read the XML string from the request body
+            using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+            string strRequest = await reader.ReadToEndAsync();
+
+            try
+            {
+                if (string.IsNullOrEmpty(strRequest))
+                {
+                    return BadRequest("Invalid XML/JSON string");
+                }
+
+                switch (strContentType)
+                {
+                    case "application/json":
+                        xmlString = GetXmlStringFromJsonString(strRequest);
+                        break;
+                    case "application/xml":
+                        xmlString = strRequest;
+                        break;
+                }
+
+                // Get IActionResult
+                XElement xml = GetActionResult(xmlString);
+
+                // Return the modified XML as a response
+                return Ok(xml);
+            }
+            catch (System.Xml.XmlException ex)
+            {
+                return BadRequest($"Invalid XML: {ex.Message}");
+            }
+        }
 
         [HttpPost]
         [Route("Compute")]
@@ -170,6 +155,69 @@ namespace CalculatorWebAPI.Controllers
             {
                 return Ok(ex.Message);
             }
+        }
+
+        private static string GetXmlStringFromJsonString(string strRequest)
+        {
+            XmlDocument? xmlDoc = null;
+
+            try
+            {
+                // Deserialize the JSON string into an XmlDocument object
+                xmlDoc = JsonConvert.DeserializeXmlNode(strRequest);
+                if (xmlDoc == null)
+                {
+                    throw new InvalidOperationException("Deserialization resulted in a null XmlDocument.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error deserializing JSON to XML: {ex.Message}");
+            }
+
+            return xmlDoc.OuterXml;
+        }
+
+        private static XElement GetActionResult(string xmlString)
+        {
+            // Parse the XML string into an XElement object
+            XElement xml = XElement.Parse(xmlString);
+
+            // LOOP through each operation in the XML
+            foreach (var element in xml!.Element("Operations")!.Elements())
+            {
+                // GET the operation type and operands from the XML
+                string operation = element.Attribute("ID")?.Value ?? string.Empty;
+                string operand1 = element.Element("Operand1")?.Value ?? "0";
+                string operand2 = element.Element("Operand2")?.Value ?? "0";
+
+                try
+                {
+                    // Validate the operation type
+                    if (string.IsNullOrEmpty(operation))
+                        throw new InvalidOperationException("Invalid operation type");
+
+                    // DECLARE the result variable
+                    double result = 0.0;
+
+                    // Create the operation object using the factory method
+                    OperationBase _operation = OperationFactory.CreateOperation(operation, Convert.ToDouble(operand1), Convert.ToDouble(operand2));
+
+                    // Execute the operation
+                    result = _operation.Execute();
+
+                    // Update the XML with the result
+                    element.Add(new XElement("Result", result));
+                }
+                catch (Exception ex)
+                {
+                    // Update the XML with the result
+                    element.Add(new XElement("Result", ex.Message));
+                }
+            }
+
+            // Return the modified XML
+            return xml;
         }
     }
 }
