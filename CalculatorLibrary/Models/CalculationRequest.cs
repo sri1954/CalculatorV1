@@ -26,7 +26,6 @@ namespace CalculatorLibrary.Models
     public class Maths
     {
         [XmlArray(ElementName ="operations")]
-        [XmlArrayItem(ElementName ="operation")]
         public List<Operation>? operations { get; set; }
     }
 

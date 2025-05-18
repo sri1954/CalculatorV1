@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CalculatorLibrary\CalculatorLibrary.csproj" />
+    <ProjectReference Include="..\CalculatorWebAPI\CalculatorWebAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
