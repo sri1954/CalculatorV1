@@ -5,7 +5,7 @@ A simple and functional calculator application built with C# and .NET, designed 
 Calculator Solution is a multi-layered .NET solution that demonstrates the integration of various project templates and C# development skills. 
 It combines a Web API, a Class Library, and Unit Testing using NUnit, all orchestrated to follow clean architecture principles and best practices in modern software development.
 
-🧠 C# Concepts Demonstrated
+# 🧠 C# Concepts Demonstrated
 This solution showcases key C# and .NET development practices, structured for scalability, testability, and maintainability.
 
 # 🌐 Web API (ASP.NET Core)
