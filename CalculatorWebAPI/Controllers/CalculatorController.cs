@@ -1,4 +1,5 @@
-﻿using CalculatorLibrary.Models;
+﻿using CalculatorLibrary.Interfacs;
+using CalculatorLibrary.Models;
 using CalculatorLibrary.Services;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -16,6 +17,48 @@ namespace CalculatorWebAPI.Controllers
 
     public class CalculatorController : ControllerBase
     {
+        private readonly IOperationFactory _operationFactory;
+        private readonly IExpressionEvaluator _expressionEvaluator;
+
+        public CalculatorController(IOperationFactory operationFactory, IExpressionEvaluator expressionEvaluator)
+        {
+            _operationFactory = operationFactory;
+            _expressionEvaluator = expressionEvaluator;
+        }
+
+        [HttpPost]
+        [Route("RecursionExtension")]
+        public IActionResult RecursionExtension(string equation)
+        {
+            // Example usage of the Evaluate method
+            if (string.IsNullOrWhiteSpace(equation))
+                return BadRequest("Equation cannot be null or empty.");
+
+            // Create an instance of ExpressionEvaluator to call the Evaluate method
+            double result = _expressionEvaluator.Evaluate(equation);
+
+            // Corrected the usage of Ok method to format the string properly
+            return Ok($"Equation {equation} result is {result}.");
+        }
+
+        [HttpPost]
+        [Route("DatatableCompute")]
+        public IActionResult DatatableCompute(string equation)
+        {
+            // Example usage of the SolveEquation method
+            if (string.IsNullOrWhiteSpace(equation))
+                return BadRequest("Equation cannot be null or empty.");
+
+            // Cast _operationFactory to the specific type OperationFactoryV1
+            if (_operationFactory is not OperationFactoryV1 operationFactoryV1)
+                return BadRequest("OperationFactory is not of type OperationFactoryV1.");
+
+            // Use the SolveEquationC method from OperationFactoryV1
+            double result = operationFactoryV1.SolveEquationC(equation);
+
+            // Corrected the usage of Ok method to format the string properly
+            return Ok($"Equation {equation} result is {result}.");
+        }
 
         [HttpPost]
         [Route("PostJSON")]

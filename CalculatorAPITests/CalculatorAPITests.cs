@@ -1,18 +1,38 @@
-﻿using CalculatorLibrary.Models;
+﻿using CalculatorLibrary.Interfacs;
+using CalculatorLibrary.Models;
+using CalculatorLibrary.Services;
 using CalculatorWebAPI.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Moq;
 using System.Text;
 
 namespace CalculatorAPITests
 {
     public class CalculatorAPITests
     {
+        private Mock<IOperationFactory> _mockOperationFactory;
+        private Mock<IExpressionEvaluator> _mockExpressionEvaluator;
+
+        private CalculatorController CreateController()
+        {
+            return new CalculatorController(_mockOperationFactory.Object, _mockExpressionEvaluator.Object);
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            // Initialize the mock for IOperationFactory
+            _mockOperationFactory = new Mock<IOperationFactory>();
+            // Initialize the mock for IExpressionEvaluator
+            _mockExpressionEvaluator = new Mock<IExpressionEvaluator>();
+        }
+
         [Test]
         public void PostModel_ValidAddition_ReturnsOkWithResult()
         {
             // Arrange
-            var controller = new CalculatorController();
+            var controller = CreateController(); 
             var request = new CalculationRequest
             {
                 operation = "add",
@@ -75,9 +95,9 @@ namespace CalculatorAPITests
         }
 
         // Helper to set up ControllerContext with a custom request body and content type
-        private static CalculatorController CreateControllerWithBody(string body, string contentType)
+        private CalculatorController CreateControllerWithBody(string body, string contentType)
         {
-            var controller = new CalculatorController();
+            var controller = new CalculatorController(_mockOperationFactory.Object, _mockExpressionEvaluator.Object); // Pass the mock object
             var context = new DefaultHttpContext();
             context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
             context.Request.ContentType = contentType;
@@ -93,13 +113,13 @@ namespace CalculatorAPITests
         {
             // Arrange
             string json = @"{
-                'Operations':{
-                'Operations': {
-                    'Operation': [
-                        { '@ID': 'add', 'Operand1': 2, 'Operand2': 3 }
-                    ]
-                }}
-            }".Replace('\'', '"');
+                    'Operations':{
+                    'Operations': {
+                        'Operation': [
+                            { '@ID': 'add', 'Operand1': 2, 'Operand2': 3 }
+                        ]
+                    }}
+                }".Replace('\'', '"');
 
             var controller = CreateControllerWithBody(json, "application/json");
 
@@ -128,13 +148,13 @@ namespace CalculatorAPITests
         public async Task PostXml_ValidXml_ReturnsOkWithXml()
         {
             string xml = @"<Root>
-                <Operations>
-                    <Operation ID='multiply'>
-                        <Operand1>4</Operand1>
-                        <Operand2>5</Operand2>
-                    </Operation>
-                </Operations>
-            </Root>";
+                    <Operations>
+                        <Operation ID='multiply'>
+                            <Operand1>4</Operand1>
+                            <Operand2>5</Operand2>
+                        </Operation>
+                    </Operations>
+                </Root>";
             var controller = CreateControllerWithBody(xml, "application/xml");
             var result = await controller.PostXml();
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
@@ -155,13 +175,13 @@ namespace CalculatorAPITests
         public async Task PostXmlOrJson_ValidXml_ReturnsOkWithXml()
         {
             string xml = @"<Root>
-                <Operations>
-                    <Operation ID='divide'>
-                        <Operand1>20</Operand1>
-                        <Operand2>4</Operand2>
-                    </Operation>
-                </Operations>
-            </Root>";
+                    <Operations>
+                        <Operation ID='divide'>
+                            <Operand1>20</Operand1>
+                            <Operand2>4</Operand2>
+                        </Operation>
+                    </Operations>
+                </Root>";
             var controller = CreateControllerWithBody(xml, "application/xml");
             var result = await controller.PostXmlOrJson();
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
@@ -181,7 +201,7 @@ namespace CalculatorAPITests
         [Test]
         public void PostModel_ValidRequest_ReturnsOkWithResult()
         {
-            var controller = new CalculatorController();
+            var controller = CreateController();
             var request = new CalculationRequest
             {
                 operation = "add",
@@ -198,7 +218,7 @@ namespace CalculatorAPITests
         [Test]
         public void PostModel_NullRequest_ReturnsBadRequest()
         {
-            var controller = new CalculatorController();
+            var controller = CreateController();
             CalculationRequest? request = null; // Use nullable reference type
             var result = controller.PostModel(request!);
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
@@ -207,7 +227,7 @@ namespace CalculatorAPITests
         [Test]
         public void PostModel_EmptyOperation_ReturnsBadRequest()
         {
-            var controller = new CalculatorController();
+            var controller = CreateController();
             var request = new CalculationRequest
             {
                 operation = "",
@@ -221,7 +241,7 @@ namespace CalculatorAPITests
         [Test]
         public void PostModel_UnknownOperation_ReturnsOkWithErrorMessage()
         {
-            var controller = new CalculatorController();
+            var controller = CreateController();
             var request = new CalculationRequest
             {
                 operation = "unknown",
@@ -235,5 +255,83 @@ namespace CalculatorAPITests
             Assert.That(ok.Value.ToString(), Does.Contain("Unknown operation type"));
         }
 
+        [Test]
+        public void RecursionExtension_ValidEquation_ReturnsOkWithResult()
+        {
+            // Arrange
+            var mockFactory = new Mock<IOperationFactory>();
+            var mockEvaluator = new Mock<IExpressionEvaluator>();
+            mockEvaluator.Setup(e => e.Evaluate("2+3*4")).Returns(14);
+            var controller = new CalculatorController(mockFactory.Object, mockEvaluator.Object);
+
+            // Act
+            var result = controller.RecursionExtension("2+3*4");
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
+            var ok = result as OkObjectResult;
+            Assert.That(ok.Value, Is.EqualTo("Equation 2+3*4 result is 14."));
+        }
+
+        [Test]
+        public void RecursionExtension_EmptyEquation_ReturnsBadRequest()
+        {
+            var mockFactory = new Mock<IOperationFactory>();
+            var mockEvaluator = new Mock<IExpressionEvaluator>();
+            var controller = new CalculatorController(mockFactory.Object, mockEvaluator.Object);
+
+            var result = controller.RecursionExtension("");
+
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            var badRequest = result as BadRequestObjectResult;
+            Assert.That(badRequest.Value, Is.EqualTo("Equation cannot be null or empty."));
+        }
+
+        [Test]
+        public void DatatableCompute_ValidEquation_ReturnsOkWithResult()
+        {
+            // Arrange
+            var mockEvaluator = new Mock<IExpressionEvaluator>();
+            var mockFactory = new Mock<IOperationFactory>();
+            var operationFactoryV1 = new Mock<OperationFactoryV1>();
+            var controller = new CalculatorController(operationFactoryV1.Object, mockEvaluator.Object);
+
+            // Act
+            var result = controller.DatatableCompute("2+3*4");
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
+            var ok = result as OkObjectResult;
+            Assert.That(ok.Value, Is.EqualTo("Equation 2+3*4 result is 14."));
+        }
+
+        [Test]
+        public void DatatableCompute_EmptyEquation_ReturnsBadRequest()
+        {
+            var mockEvaluator = new Mock<IExpressionEvaluator>();
+            var mockFactory = new Mock<IOperationFactory>();
+            var operationFactoryV1 = new Mock<OperationFactoryV1>();
+            var controller = new CalculatorController(operationFactoryV1.Object, mockEvaluator.Object);
+
+            var result = controller.DatatableCompute("");
+
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            var badRequest = result as BadRequestObjectResult;
+            Assert.That(badRequest.Value, Is.EqualTo("Equation cannot be null or empty."));
+        }
+
+        [Test]
+        public void DatatableCompute_FactoryNotV1_ReturnsBadRequest()
+        {
+            var mockFactory = new Mock<IOperationFactory>();
+            var mockEvaluator = new Mock<IExpressionEvaluator>();
+            var controller = new CalculatorController(mockFactory.Object, mockEvaluator.Object);
+
+            var result = controller.DatatableCompute("2+3");
+
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            var badRequest = result as BadRequestObjectResult;
+            Assert.That(badRequest.Value, Is.EqualTo("OperationFactory is not of type OperationFactoryV1."));
+        }
     }
 }

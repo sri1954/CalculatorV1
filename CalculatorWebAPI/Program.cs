@@ -1,3 +1,6 @@
+using CalculatorLibrary.Interfacs;
+using CalculatorLibrary.Models;
+using CalculatorLibrary.Services;
 using Microsoft.AspNetCore.Mvc.Formatters;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +10,9 @@ builder.Services.AddControllers().AddXmlSerializerFormatters();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IOperationFactory, OperationFactoryV1>();
+builder.Services.AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
 
 var app = builder.Build();
 
