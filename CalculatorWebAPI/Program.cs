@@ -11,7 +11,7 @@ builder.Services.AddControllers().AddXmlSerializerFormatters();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IOperationFactory, OperationFactoryV1>();
+builder.Services.AddScoped<IOperationFactoryExt, OperationFactoryExt>();
 builder.Services.AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
 
 var app = builder.Build();

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CalculatorLibrary.Services
 {
-    public class OperationFactoryV1 : IOperationFactory
+    public class OperationFactoryExt : IOperationFactoryExt
     {
         public OperationBase CreateOperation(string type, double op1, double op2)
         {
@@ -37,7 +37,7 @@ public static class OperationFactoryV1Extensions
     /// <param name="factory">The OperationFactory instance (not used, for extension method syntax).</param>
     /// <param name="equation">The equation string.</param>
     /// <returns>The result of the equation.</returns>
-    public static double SolveEquationC(this OperationFactoryV1 factory, string equation)
+    public static double SolveEquationC(this OperationFactoryExt factory, string equation)
     {
         if (string.IsNullOrWhiteSpace(equation))
             throw new ArgumentException("Equation cannot be null or empty.", nameof(equation));

@@ -17,10 +17,10 @@ namespace CalculatorWebAPI.Controllers
 
     public class CalculatorController : ControllerBase
     {
-        private readonly IOperationFactory _operationFactory;
+        private readonly IOperationFactoryExt _operationFactory;
         private readonly IExpressionEvaluator _expressionEvaluator;
 
-        public CalculatorController(IOperationFactory operationFactory, IExpressionEvaluator expressionEvaluator)
+        public CalculatorController(IOperationFactoryExt operationFactory, IExpressionEvaluator expressionEvaluator)
         {
             _operationFactory = operationFactory;
             _expressionEvaluator = expressionEvaluator;
@@ -50,7 +50,7 @@ namespace CalculatorWebAPI.Controllers
                 return BadRequest("Equation cannot be null or empty.");
 
             // Cast _operationFactory to the specific type OperationFactoryV1
-            if (_operationFactory is not OperationFactoryV1 operationFactoryV1)
+            if (_operationFactory is not OperationFactoryExt operationFactoryV1)
                 return BadRequest("OperationFactory is not of type OperationFactoryV1.");
 
             // Use the SolveEquationC method from OperationFactoryV1

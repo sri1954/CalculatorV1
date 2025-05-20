@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CalculatorLibrary.Interfacs
 {
-    public interface IOperationFactory
+    public interface IOperationFactoryExt
     {
         OperationBase CreateOperation(string type, double op1, double op2);
     }

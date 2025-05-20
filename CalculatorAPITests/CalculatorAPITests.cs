@@ -11,7 +11,7 @@ namespace CalculatorAPITests
 {
     public class CalculatorAPITests
     {
-        private Mock<IOperationFactory> _mockOperationFactory;
+        private Mock<IOperationFactoryExt> _mockOperationFactory;
         private Mock<IExpressionEvaluator> _mockExpressionEvaluator;
 
         private CalculatorController CreateController()
@@ -23,7 +23,7 @@ namespace CalculatorAPITests
         public void Setup()
         {
             // Initialize the mock for IOperationFactory
-            _mockOperationFactory = new Mock<IOperationFactory>();
+            _mockOperationFactory = new Mock<IOperationFactoryExt>();
             // Initialize the mock for IExpressionEvaluator
             _mockExpressionEvaluator = new Mock<IExpressionEvaluator>();
         }
@@ -259,7 +259,7 @@ namespace CalculatorAPITests
         public void RecursionExtension_ValidEquation_ReturnsOkWithResult()
         {
             // Arrange
-            var mockFactory = new Mock<IOperationFactory>();
+            var mockFactory = new Mock<IOperationFactoryExt>();
             var mockEvaluator = new Mock<IExpressionEvaluator>();
             mockEvaluator.Setup(e => e.Evaluate("2+3*4")).Returns(14);
             var controller = new CalculatorController(mockFactory.Object, mockEvaluator.Object);
@@ -276,7 +276,7 @@ namespace CalculatorAPITests
         [Test]
         public void RecursionExtension_EmptyEquation_ReturnsBadRequest()
         {
-            var mockFactory = new Mock<IOperationFactory>();
+            var mockFactory = new Mock<IOperationFactoryExt>();
             var mockEvaluator = new Mock<IExpressionEvaluator>();
             var controller = new CalculatorController(mockFactory.Object, mockEvaluator.Object);
 
@@ -292,8 +292,8 @@ namespace CalculatorAPITests
         {
             // Arrange
             var mockEvaluator = new Mock<IExpressionEvaluator>();
-            var mockFactory = new Mock<IOperationFactory>();
-            var operationFactoryV1 = new Mock<OperationFactoryV1>();
+            var mockFactory = new Mock<IOperationFactoryExt>();
+            var operationFactoryV1 = new Mock<OperationFactoryExt>();
             var controller = new CalculatorController(operationFactoryV1.Object, mockEvaluator.Object);
 
             // Act
@@ -309,8 +309,8 @@ namespace CalculatorAPITests
         public void DatatableCompute_EmptyEquation_ReturnsBadRequest()
         {
             var mockEvaluator = new Mock<IExpressionEvaluator>();
-            var mockFactory = new Mock<IOperationFactory>();
-            var operationFactoryV1 = new Mock<OperationFactoryV1>();
+            var mockFactory = new Mock<IOperationFactoryExt>();
+            var operationFactoryV1 = new Mock<OperationFactoryExt>();
             var controller = new CalculatorController(operationFactoryV1.Object, mockEvaluator.Object);
 
             var result = controller.DatatableCompute("");
@@ -323,7 +323,7 @@ namespace CalculatorAPITests
         [Test]
         public void DatatableCompute_FactoryNotV1_ReturnsBadRequest()
         {
-            var mockFactory = new Mock<IOperationFactory>();
+            var mockFactory = new Mock<IOperationFactoryExt>();
             var mockEvaluator = new Mock<IExpressionEvaluator>();
             var controller = new CalculatorController(mockFactory.Object, mockEvaluator.Object);
 
