@@ -17,11 +17,13 @@ namespace CalculatorWebAPI.Controllers
 
     public class CalculatorController : ControllerBase
     {
+        // Declare the operation factory and expression evaluator as readonly fields
         private readonly IOperationFactoryExt _operationFactory;
         private readonly IExpressionEvaluator _expressionEvaluator;
 
         public CalculatorController(IOperationFactoryExt operationFactory, IExpressionEvaluator expressionEvaluator)
         {
+            // Initialize the operation factory and expression evaluator
             _operationFactory = operationFactory;
             _expressionEvaluator = expressionEvaluator;
         }
@@ -66,6 +68,7 @@ namespace CalculatorWebAPI.Controllers
 
         public async Task<IActionResult> PostJSON()
         {
+            // Initialize an empty XML string
             string xmlString = string.Empty;
 
             // Read the XML string from the request body
